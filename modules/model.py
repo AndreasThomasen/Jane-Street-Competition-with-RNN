@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class MarketPredictor(nn.Module):
@@ -42,11 +43,10 @@ class MarketPredictorResnet(nn.Module):
         
         self.initialblock = nn.Sequential(
             nn.Linear(fc_input,h_len),
-            nn.BatchNorm1d(h_len),
             nn.Dropout(dropout_rate))
         
         
-        self.resblocks = nn.ModuleList([nn.Sequential(
+        self.initialresblock = nn.Sequential(
             nn.BatchNorm1d(h_len),
             nn.ReLU(),
             nn.Linear(h_len,h_len),
@@ -54,15 +54,28 @@ class MarketPredictorResnet(nn.Module):
             nn.BatchNorm1d(h_len),
             nn.ReLU(),
             nn.Linear(h_len,h_len),
+            nn.Dropout(dropout_rate))
+        
+        
+        self.resblocks = nn.ModuleList([nn.Sequential(
+            nn.BatchNorm1d(2*h_len),
+            nn.ReLU(),
+            nn.Linear(2*h_len,h_len),
+            nn.Dropout(dropout_rate),
+            nn.BatchNorm1d(h_len),
+            nn.ReLU(),
+            nn.Linear(h_len,h_len),
             nn.Dropout(dropout_rate)) for i in range(depth)])
         
-        self.reduce = nn.utils.weight_norm(nn.Linear(h_len,5))
+        self.reduce = nn.utils.weight_norm(nn.Linear(2*h_len,5))
         
     def forward(self,x):
-        x = self.initialblock(x)
+        x0 = self.initialblock(x)
+        x1 = self.initialresblock(x0)
         for i in range(self.depth):
             
-            x = x + self.resblocks[i](x)
-        
+            x = torch.cat([x0, x1],1)
+            x1 = self.resblocks[i](x)
+        x = torch.cat([x0, x1],1)
         x = self.reduce(x)
         return x

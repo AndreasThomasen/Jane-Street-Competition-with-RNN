@@ -13,7 +13,7 @@ from modules.model import MarketPredictorResnet
 
 
 DATA_PATH = './data'
-CACHE_PATH = './'
+CACHE_PATH = './reduced'
 
 SEED = 42
 BATCH_SIZE = 8192
@@ -22,7 +22,7 @@ LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-5
 EARLY_STOP = 6
 NFOLDS = 5
-TRAIN = False
+TRAIN = True
 VALID_RATIO = 0.1
 
 FC_INPUT = 132
@@ -93,7 +93,7 @@ if TRAIN:
             
             print(f"FOLD{_fold} EPOCH:{epoch:3} train_loss={train_loss:.5f} "
                       f"valid_logloss={valid_logloss:.5f} valid_auc={valid_auc:.5f} "
-                      f"time: {(time.time() - start_time) // 60:d}min {np.mod(time.time() - start_time, 60):d} sec")
+                      f"time: {int((time.time() - start_time) // 60):d}min")
             st(valid_auc, model, model_path=weight_path)
             if st.early_stop:
                 print("Early stopping")
